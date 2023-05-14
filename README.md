@@ -6,9 +6,9 @@
 - You can use this code for your projects
 
 ## Control
- (A) (D) (<-) (->) - move tetramino
- (Space) (W) (^) - Rotate shape
- (S) (\/) - Quickly lower the figure
+ - (A) (D) (<-) (->) - move tetramino
+ - (Space) (W) (^) - Rotate shape
+ - (S) (\/) - Quickly lower the figure
 
 ## Tech
 
