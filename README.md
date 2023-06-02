@@ -8,7 +8,7 @@
 ## Control
  - (A) (D) (<-) (->) - move tetramino
  - (Space) (W) (^) - Rotate shape
- - (S) (\/) - Quickly lower the figure
+ - (S) (\\/) - Quickly lower the figure
 
 ## Tech
 
