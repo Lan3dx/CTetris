@@ -24,7 +24,7 @@ namespace Shapes {
 
 namespace CD {
   int fall = 250; // cooldown for gravity
-  int key = 70; // cooldown for keyboard
+  int key = 55; // cooldown for keyboard
 }
 
 void cfg() {
