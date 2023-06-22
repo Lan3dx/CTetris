@@ -44,7 +44,7 @@ void cfg() {
   structCursorInfo.bVisible = FALSE;
   SetConsoleCursorInfo(activeBuffer, &structCursorInfo);
 
-  SetConsoleTextAttribute(activeBuffer, 11); // set console color
+  SetConsoleTextAttribute(activeBuffer, 15); // set console color
 }
 
 void clear() {
@@ -88,9 +88,11 @@ void render(std::vector<std::vector<int>>&  board, int Score, std::vector<std::v
       if (j == 0) {
         line += "<!";
       }
-      if (board[i][j] == 1) 
-      {
-          line += "[]";
+      if (board[i][j] == 1) {
+        line += "[]";
+      }
+      else if (board[i][j] == 2) {
+          line += "()";
       }
       else {
           line += " .";
@@ -265,8 +267,7 @@ public:
   // Lower the figure down by 1 element
   void lower(std::vector<std::vector<int>>& board) {
     if (wall_clsn(std::ref(board), 'b') == false) {
-      if (shape_clsn(std::ref(board), 'b') == false)
-      { 
+      if (shape_clsn(std::ref(board), 'b') == false) { 
         for (size_t y = 0; y < shape[0].size(); y++) {
           shape[1][y] += 1;
         }
@@ -333,9 +334,9 @@ public:
   }
 
   // spawn shape on board
-  void spawn(std::vector<std::vector<int>>& board) {
+  void spawn(std::vector<std::vector<int>>& board, int symbol) {
     for (size_t y = 0; y < shape[0].size(); y++) {
-      board[shape[1][y]][shape[0][y]] = 1;
+      board[shape[1][y]][shape[0][y]] = symbol;
     }
   }
 };
@@ -351,7 +352,7 @@ void cdset(std::vector<int>& values) {
 bool burnline(std::vector<std::vector<int>>& board) {
   int min = 0;
   bool flag = false;
-  for (size_t i = 0; i < board.size(); i++) {
+  for (int i = 0; i < board.size(); i++) {
     flag = false;
     for (size_t j = 0; j < board[0].size(); j++) {
       if (board[i][j] != 1) {
@@ -378,9 +379,24 @@ bool burnline(std::vector<std::vector<int>>& board) {
   return true;
 }
 
+void shadowcalculate(Shape* shape, Shape* shapeshadow, std::vector<std::vector<int>>& board, int random_shape, bool isRotate) {
+  shapeshadow->remove(std::ref(board));
+  shape->remove(std::ref(board));
+  *shapeshadow = *shape;
+  if (isRotate) {
+    shapeshadow->rotate(std::ref(board));
+  }
+  for (size_t i = 0; i < 20; i++) {
+    shapeshadow->remove(std::ref(board));
+    shapeshadow->lower(std::ref(board));
+    shapeshadow->spawn(std::ref(board), 2);
+  }
+  shape->spawn(std::ref(board), 1);
+}
+
 int main() {
   cfg();
-  srand(time(NULL));
+  srand((unsigned int)time(NULL));
 
   int Score = 0;
   int lines = 0;
@@ -389,6 +405,7 @@ int main() {
   bool isBurned = false;
   int random_shape = rand() % 7;
   Shape shape(Shapes::shapes[random_shape], random_shape);
+  Shape shapeshadow(Shapes::shapes[random_shape], random_shape);
   int next_random_shape = rand() % 7;
   std::vector<std::vector<int>> nextShape = Shapes::shapes[next_random_shape];
   std::vector<int> values = { CD::fall, CD::key };
@@ -400,18 +417,24 @@ int main() {
     if (GetAsyncKeyState((unsigned short)'D') || GetAsyncKeyState((unsigned short)VK_RIGHT))
     {
       if (values[1] <= 0) {
+        shapeshadow.remove(std::ref(board));
+        shapeshadow.move(1, std::ref(board));
+        shapeshadow.spawn(std::ref(board), 2);
         shape.remove(std::ref(board));
         shape.move(1, std::ref(board));
-        shape.spawn(std::ref(board));
+        shape.spawn(std::ref(board), 1);
         values[1] = CD::key;
       }
     }
     if (GetAsyncKeyState((unsigned short)'A') || GetAsyncKeyState((unsigned short)VK_LEFT))
     {
       if (values[1] <= 0) {
+        shapeshadow.remove(std::ref(board));
+        shapeshadow.move(-1, std::ref(board));
+        shapeshadow.spawn(std::ref(board), 2);
         shape.remove(std::ref(board));
         shape.move(-1, std::ref(board));
-        shape.spawn(std::ref(board));
+        shape.spawn(std::ref(board), 1);
         values[1] = CD::key;
       }
     }
@@ -420,26 +443,19 @@ int main() {
       if (values[1] <= 0) {
         shape.remove(std::ref(board));
         shape.lower(std::ref(board));
-        shape.spawn(std::ref(board));
+        shape.spawn(std::ref(board), 1);
         values[1] = CD::key;
       }
     }
     if (GetAsyncKeyState((unsigned short)'W') || GetAsyncKeyState((unsigned short)VK_UP) || GetAsyncKeyState((unsigned short)VK_SPACE))
     {
       if (values[1] <= 0) {
+        shadowcalculate(&shape, &shapeshadow, std::ref(board), random_shape, true);
         shape.remove(std::ref(board));
         shape.rotate(std::ref(board));
-        shape.spawn(std::ref(board));
+        shape.spawn(std::ref(board), 1);
         values[1] = CD::key;
       }
-    }
-
-    // if shape collision with other figure
-    if (isFrozen) {
-      shape.reset(nextShape, next_random_shape);
-      next_random_shape = rand() % 7;
-      nextShape = Shapes::shapes[next_random_shape];
-      isFrozen = false;
     }
 
     // lower shape
@@ -447,9 +463,10 @@ int main() {
       if (values[0] <= 0) {
         shape.remove(std::ref(board));
         shape.lower(std::ref(board));
-        shape.spawn(std::ref(board));
+        shape.spawn(std::ref(board), 1);
         values[0] = CD::fall;
       }
+      shadowcalculate(&shape, &shapeshadow, std::ref(board), random_shape, false);
     }
 
     // Checking if an event has occurred when the game should end
@@ -463,6 +480,7 @@ int main() {
 
     // Check if there is a burnt line
     if (shape.getStatus() == false) {
+      shapeshadow = shape;
       isBurned = burnline(std::ref(board));
       if (isBurned) {
         lines += 1;
@@ -478,6 +496,16 @@ int main() {
         }
       }
     }
+
+    // if shape collision with other figure
+    if (shape.getStatus() == false) {
+      shapeshadow.reset(nextShape, next_random_shape);
+      shape.reset(nextShape, next_random_shape);
+      next_random_shape = rand() % 7;
+      nextShape = Shapes::shapes[next_random_shape];
+      isFrozen = false;
+    }
+
     // scoring according to tetris standards
     if (lines == 1) {
       Score += 100;
