@@ -70,13 +70,14 @@ void render(std::vector<std::vector<int>>&  board, int Score, std::vector<std::v
       nextShape[1][i] += 1;
     }
   }
+  // local board of the next shape
   std::vector<std::vector<int>> board_ns(6, std::vector<int>(5));
   for (size_t i = 0; i < board_ns.size(); i++) {
     for (size_t j = 0; j < board_ns[i].size(); j++) {
       board_ns[i][j] = 0;
     }
   }
-  // next shape window
+  // fill in the board of the next shape according to the coordinates
   for (size_t y = 0; y < nextShape[0].size(); y++) {
     board_ns[nextShape[1][y]][nextShape[0][y]] = 1;
   }
@@ -88,12 +89,15 @@ void render(std::vector<std::vector<int>>&  board, int Score, std::vector<std::v
       if (j == 0) {
         line += "<!";
       }
+      // default shape
       if (board[i][j] == 1) {
         line += "[]";
       }
+      // shape shadow
       else if (board[i][j] == 2) {
           line += "()";
       }
+      // space
       else {
           line += " .";
       }
@@ -157,6 +161,7 @@ void render(std::vector<std::vector<int>>&  board, int Score, std::vector<std::v
     else {
       line += "                         ";
     }
+
     // output line
     std::cout << line << '\n';
   }
@@ -167,9 +172,9 @@ void render(std::vector<std::vector<int>>&  board, int Score, std::vector<std::v
 
 class Shape {
 public:
-  bool isAlive;
+  bool isAlive; // boolean variable to check if shape has not collided with an object or wall
   int shape_i; // index (check namespace Shapes)
-  std::vector<std::vector<int>> shape;
+  std::vector<std::vector<int>> shape; // shape coordinates
 
   Shape(std::vector<std::vector<int>> c_shape, int c_shape_i) {
     isAlive = true;
@@ -181,7 +186,7 @@ public:
     return isAlive;
   }
 
-  // set new shape
+  // replacing the coordinates of the shape and its index from namespace Shapes
   void reset(std::vector<std::vector<int>> r_shape, int r_shape_i) {
     shape = r_shape;
     shape_i = r_shape_i;
@@ -190,6 +195,7 @@ public:
 
   // Collision with figures
   bool shape_clsn(std::vector<std::vector<int>> board, char type) {
+    // b - bottom
     if (type == 'b') {
       std::vector<std::vector<int>> nshape = shape;
       for (size_t y = 0; y < nshape[0].size(); y++) {
@@ -202,6 +208,7 @@ public:
         }
       }
     }
+    // r - right
     if (type == 'r') {
       std::vector<std::vector<int>> nshape = shape;
       for (size_t y = 0; y < nshape[0].size(); y++) {
@@ -213,6 +220,7 @@ public:
         }
       }
     }
+    // l - left
     if (type == 'l') {
       std::vector<std::vector<int>> nshape = shape;
       for (size_t y = 0; y < nshape[0].size(); y++) {
@@ -247,14 +255,17 @@ public:
     }
 
     if (right == board[0].size()-1) {
+      // r - right
       if(type == 'r')
         return true;
     }
     if (left == 0) {
+      // l - left
       if(type == 'l')
         return true;
     }
     if (bottom == board.size()-1) {
+      // b - bottom
       if (type == 'b') {
         isAlive = false;
         return true;
@@ -279,9 +290,11 @@ public:
   void move(int side, std::vector<std::vector<int>>& board) {
     char type = 'n';
     if (side == 1) {
+      // r - right
       type = 'r';
     }
     else {
+      // l - left
       type = 'l';
     }
     if (wall_clsn(std::ref(board), type) == false) {
@@ -295,6 +308,7 @@ public:
 
   // rotate figure
   void rotate(std::vector<std::vector<int>>& board) {
+    // index 3 == { O } shape
     if (shape_i != 3) {
       std::vector<std::vector<int>> d_shape = shape;
       int cx = shape[0][1];
@@ -336,12 +350,15 @@ public:
   // spawn shape on board
   void spawn(std::vector<std::vector<int>>& board, int symbol) {
     for (size_t y = 0; y < shape[0].size(); y++) {
+      // symbol:
+      // 1 - default shape
+      // 2 - shape shadow
       board[shape[1][y]][shape[0][y]] = symbol;
     }
   }
 };
 
-// cooldowns -= 1
+// reducing cooldowns by 1
 void cdset(std::vector<int>& values) {
   for (size_t i = 0; i < values.size(); i++) {
     values[i] -= 1;
@@ -349,6 +366,8 @@ void cdset(std::vector<int>& values) {
 }
 
 // remove line
+// returns true if one line was burned
+// this is necessary to calculate the number of points for the burned lines
 bool burnline(std::vector<std::vector<int>>& board) {
   int min = 0;
   bool flag = false;
@@ -379,18 +398,23 @@ bool burnline(std::vector<std::vector<int>>& board) {
   return true;
 }
 
+// determining where the shape shadow will be located
 void shadowcalculate(Shape* shape, Shape* shapeshadow, std::vector<std::vector<int>>& board, int random_shape, bool isRotate) {
   shapeshadow->remove(std::ref(board));
+  // delete the default shape again so that there are no errors in the calculations
   shape->remove(std::ref(board));
   *shapeshadow = *shape;
+  // check whether the user flips the shape to calculate the coordinates accurately
   if (isRotate) {
     shapeshadow->rotate(std::ref(board));
   }
+  // just lower the shape
   for (size_t i = 0; i < 20; i++) {
     shapeshadow->remove(std::ref(board));
     shapeshadow->lower(std::ref(board));
     shapeshadow->spawn(std::ref(board), 2);
   }
+  // spawn default shape after calculating
   shape->spawn(std::ref(board), 1);
 }
 
@@ -399,7 +423,7 @@ int main() {
   srand((unsigned int)time(NULL));
 
   int Score = 0;
-  int lines = 0;
+  int lines = 0; // number of burnt lines
   auto board = board_init();
   bool isFrozen = false;
   bool isBurned = false;
