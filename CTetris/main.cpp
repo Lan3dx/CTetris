@@ -23,8 +23,8 @@ namespace Shapes {
 }
 
 namespace CD {
-  int fall = 250; // cooldown for gravity
-  int key = 55; // cooldown for keyboard
+  int fall = 450; // cooldown for gravity
+  int key = 85; // cooldown for keyboard
 }
 
 void cfg() {
@@ -383,7 +383,7 @@ bool burnline(std::vector<std::vector<int>>& board) {
       break;
     }
   }
-  if (flag == true) {
+  if (flag) {
     return false;
   }
   for (size_t i = 0; i < board[0].size(); i++) {
@@ -427,6 +427,7 @@ int main() {
   auto board = board_init();
   bool isFrozen = false;
   bool isBurned = false;
+  bool pause = false;
   int random_shape = rand() % 7;
   Shape shape(Shapes::shapes[random_shape], random_shape);
   Shape shapeshadow(Shapes::shapes[random_shape], random_shape);
@@ -438,123 +439,135 @@ int main() {
     isFrozen = !shape.getStatus();
 
     // control
-    if (GetAsyncKeyState((unsigned short)'D') || GetAsyncKeyState((unsigned short)VK_RIGHT))
+    if (GetAsyncKeyState((unsigned short)'E'))
     {
       if (values[1] <= 0) {
-        shapeshadow.remove(std::ref(board));
-        shapeshadow.move(1, std::ref(board));
-        shapeshadow.spawn(std::ref(board), 2);
-        shape.remove(std::ref(board));
-        shape.move(1, std::ref(board));
-        shape.spawn(std::ref(board), 1);
+        if (pause == true) {
+          pause = false;
+        }
+        else {
+          pause = true;
+        }
         values[1] = CD::key;
       }
     }
-    if (GetAsyncKeyState((unsigned short)'A') || GetAsyncKeyState((unsigned short)VK_LEFT))
-    {
-      if (values[1] <= 0) {
-        shapeshadow.remove(std::ref(board));
-        shapeshadow.move(-1, std::ref(board));
-        shapeshadow.spawn(std::ref(board), 2);
-        shape.remove(std::ref(board));
-        shape.move(-1, std::ref(board));
-        shape.spawn(std::ref(board), 1);
-        values[1] = CD::key;
-      }
-    }
-    if (GetAsyncKeyState((unsigned short)'S') || GetAsyncKeyState((unsigned short)VK_DOWN))
-    {
-      if (values[1] <= 0) {
-        shape.remove(std::ref(board));
-        shape.lower(std::ref(board));
-        shape.spawn(std::ref(board), 1);
-        values[1] = CD::key;
-      }
-    }
-    if (GetAsyncKeyState((unsigned short)'W') || GetAsyncKeyState((unsigned short)VK_UP) || GetAsyncKeyState((unsigned short)VK_SPACE))
-    {
-      if (values[1] <= 0) {
-        shadowcalculate(&shape, &shapeshadow, std::ref(board), random_shape, true);
-        shape.remove(std::ref(board));
-        shape.rotate(std::ref(board));
-        shape.spawn(std::ref(board), 1);
-        values[1] = CD::key;
-      }
-    }
-
-    // lower shape
-    if (shape.getStatus()) {
-      if (values[0] <= 0) {
-        shape.remove(std::ref(board));
-        shape.lower(std::ref(board));
-        shape.spawn(std::ref(board), 1);
-        values[0] = CD::fall;
-      }
-      shadowcalculate(&shape, &shapeshadow, std::ref(board), random_shape, false);
-    }
-
-    // Checking if an event has occurred when the game should end
-    if (shape.getStatus() == false) {
-      if (board[0][5] == 1) {
-        clear();
-        std::cout << "GAME OVER" << std::endl;
-        exit(0);
-      }
-    }
-
-    // Check if there is a burnt line
-    if (shape.getStatus() == false) {
-      shapeshadow = shape;
-      isBurned = burnline(std::ref(board));
-      if (isBurned) {
-        lines += 1;
-        while (isBurned) {
-          isBurned = burnline(std::ref(board));
-          if (isBurned)
-          {
-            lines += 1;
-          }
-          render(std::ref(board), Score, nextShape, next_random_shape);
-          Sleep(100);
-          clear();
+    if (pause == false) {
+      if (GetAsyncKeyState((unsigned short)'D') || GetAsyncKeyState((unsigned short)VK_RIGHT))
+      {
+        if (values[1] <= 0) {
+          shapeshadow.remove(std::ref(board));
+          shapeshadow.move(1, std::ref(board));
+          shapeshadow.spawn(std::ref(board), 2);
+          shape.remove(std::ref(board));
+          shape.move(1, std::ref(board));
+          shape.spawn(std::ref(board), 1);
+          values[1] = CD::key;
         }
       }
-    }
+      if (GetAsyncKeyState((unsigned short)'A') || GetAsyncKeyState((unsigned short)VK_LEFT))
+      {
+        if (values[1] <= 0) {
+          shapeshadow.remove(std::ref(board));
+          shapeshadow.move(-1, std::ref(board));
+          shapeshadow.spawn(std::ref(board), 2);
+          shape.remove(std::ref(board));
+          shape.move(-1, std::ref(board));
+          shape.spawn(std::ref(board), 1);
+          values[1] = CD::key;
+        }
+      }
+      if (GetAsyncKeyState((unsigned short)'S') || GetAsyncKeyState((unsigned short)VK_DOWN))
+      {
+        if (values[1] <= 0) {
+          shape.remove(std::ref(board));
+          shape.lower(std::ref(board));
+          shape.spawn(std::ref(board), 1);
+          values[1] = CD::key;
+        }
+      }
+      if (GetAsyncKeyState((unsigned short)'W') || GetAsyncKeyState((unsigned short)VK_UP) || GetAsyncKeyState((unsigned short)VK_SPACE))
+      {
+        if (values[1] <= 0) {
+          shadowcalculate(&shape, &shapeshadow, std::ref(board), random_shape, true);
+          shape.remove(std::ref(board));
+          shape.rotate(std::ref(board));
+          shape.spawn(std::ref(board), 1);
+          values[1] = CD::key;
+        }
+      }
 
-    // if shape collision with other figure
-    if (shape.getStatus() == false) {
-      shapeshadow.reset(nextShape, next_random_shape);
-      shape.reset(nextShape, next_random_shape);
-      next_random_shape = rand() % 7;
-      nextShape = Shapes::shapes[next_random_shape];
-      isFrozen = false;
-    }
+      // lower shape
+      if (shape.getStatus()) {
+        if (values[0] <= 0) {
+          shape.remove(std::ref(board));
+          shape.lower(std::ref(board));
+          shape.spawn(std::ref(board), 1);
+          values[0] = CD::fall;
+        }
+        shadowcalculate(&shape, &shapeshadow, std::ref(board), random_shape, false);
+      }
+      // Checking if an event has occurred when the game should end
+      if (shape.getStatus() == false) {
+        if (board[0][5] == 1) {
+          clear();
+          std::cout << "GAME OVER" << std::endl;
+          exit(0);
+        }
+      }
 
-    // scoring according to tetris standards
-    if (lines == 1) {
-      Score += 100;
-      lines = 0;
-    }
-    else if (lines == 2) {
-      Score += 300;
-      lines = 0;  
-    }
-    else if (lines == 3) {
-      Score += 700;
-      lines = 0;
-    } 
-    else if(lines == 4){
-      Score += 1500;
-      lines = 0;
+      // Check if there is a burnt line
+      if (shape.getStatus() == false) {
+        shapeshadow = shape;
+        isBurned = burnline(std::ref(board));
+        if (isBurned) {
+          lines += 1;
+          while (isBurned) {
+            isBurned = burnline(std::ref(board));
+            if (isBurned)
+            {
+              lines += 1;
+            }
+            render(std::ref(board), Score, nextShape, next_random_shape);
+            Sleep(100);
+            clear();
+          }
+        }
+      }
+
+      // if shape collision with other figure
+      if (shape.getStatus() == false) {
+        shapeshadow.reset(nextShape, next_random_shape);
+        shape.reset(nextShape, next_random_shape);
+        next_random_shape = rand() % 7;
+        nextShape = Shapes::shapes[next_random_shape];
+        isFrozen = false;
+      }
+
+      // scoring according to tetris standards
+      if (lines == 1) {
+        Score += 100;
+        lines = 0;
+      }
+      else if (lines == 2) {
+        Score += 300;
+        lines = 0;
+      }
+      else if (lines == 3) {
+        Score += 700;
+        lines = 0;
+      }
+      else if (lines == 4) {
+        Score += 1500;
+        lines = 0;
+      }
     }
 
     // cooldowns -= 1
-    cdset(std::ref(values));
+      cdset(std::ref(values));
 
     // output
     render(std::ref(board), Score, nextShape, next_random_shape);
     clear();
   }
-
   return 0;
 }
