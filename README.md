@@ -9,6 +9,7 @@
  - (A) (D) ( ← ) ( → ) - move tetramino
  - (Space) (W) ( ↑ ) - Rotate shape
  - (S) ( ↓ ) - Quickly lower the figure
+ - (С) - Swap shape
 
 ## Tech
 
