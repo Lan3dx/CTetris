@@ -20,11 +20,12 @@ namespace Shapes {
   std::vector<std::vector<int>> Z = { {4, 5, 5, 6}, {0, 0, 1, 1} };
   std::vector<std::vector<int>> S = { {4, 5, 5, 6}, {1, 1, 0, 0} };
   std::vector<std::vector<std::vector<int>>> shapes = { I,L,J,O,T,Z,S };
+  const int shapequantity = 7;
 }
 
-namespace CD {
-  int fall = 450; // cooldown for gravity
-  int key = 85; // cooldown for keyboard
+namespace CD { // change this for ur computer (higher values correspond to a more powerful device)
+  int fall = 350; // cooldown for gravity
+  int key = 65; // cooldown for keyboard
 }
 
 void cfg() {
@@ -111,11 +112,11 @@ void render(std::vector<std::vector<int>>&  board, int Score, std::vector<std::v
     }
 
     // next shape window
-    else if (i == 5) {
+    else if (i == 6) {
       line += "       Next:";
     }
-    else if (i == 7) {
-      line += "       ";
+    else if (i == 8) {
+      line += "     <!";
       for (size_t k = 0; k < board_ns[0].size(); k++) {
         if (board_ns[0][k] == 1) {
           line += "[]";
@@ -124,9 +125,10 @@ void render(std::vector<std::vector<int>>&  board, int Score, std::vector<std::v
           line += " .";
         }
       }
+      line += "!>";
     }
-    else if (i == 8) {
-      line += "       ";
+    else if (i == 9) {
+      line += "     <!";
       for (size_t k = 0; k < board_ns[1].size(); k++) {
         if (board_ns[1][k] == 1) {
           line += "[]";
@@ -135,9 +137,10 @@ void render(std::vector<std::vector<int>>&  board, int Score, std::vector<std::v
           line += " .";
         }
       }
+      line += "!>";
     }
-    else if (i == 9) {
-      line += "       ";
+    else if (i == 10) {
+      line += "     <!";
       for (size_t k = 0; k < board_ns[2].size(); k++) {
         if (board_ns[2][k] == 1) {
           line += "[]";
@@ -146,9 +149,10 @@ void render(std::vector<std::vector<int>>&  board, int Score, std::vector<std::v
           line += " .";
         }
       }
+      line += "!>";
     }
-    else if (i == 10) {
-      line += "       ";
+    else if (i == 11) {
+      line += "     <!";
       for (size_t k = 0; k < board_ns[3].size(); k++) {
         if (board_ns[3][k] == 1) {
           line += "[]";
@@ -157,6 +161,13 @@ void render(std::vector<std::vector<int>>&  board, int Score, std::vector<std::v
           line += " .";
         }
       }
+      line += "!>";
+    }
+    else if (i == 12) {
+      line += "     <!==========!>";
+    }
+    else if (i == 13) {
+      line += "       \\/\\/\\/\\/\\/";
     }
     else {
       line += "                         ";
@@ -191,6 +202,11 @@ public:
     shape = r_shape;
     shape_i = r_shape_i;
     isAlive = true;
+  }
+
+  void swap(std::vector<std::vector<int>> r_shape, int r_shape_i) {
+    shape = r_shape;
+    shape_i = r_shape_i;
   }
 
   // Collision with figures
@@ -428,10 +444,11 @@ int main() {
   bool isFrozen = false;
   bool isBurned = false;
   bool pause = false;
-  int random_shape = rand() % 7;
+  int random_shape = rand() % Shapes::shapequantity;
   Shape shape(Shapes::shapes[random_shape], random_shape);
   Shape shapeshadow(Shapes::shapes[random_shape], random_shape);
-  int next_random_shape = rand() % 7;
+  int next_random_shape = rand() % Shapes::shapequantity;
+  int swap_next_random_shape = rand() % Shapes::shapequantity;
   std::vector<std::vector<int>> nextShape = Shapes::shapes[next_random_shape];
   std::vector<int> values = { CD::fall, CD::key };
 
@@ -495,6 +512,19 @@ int main() {
           values[1] = CD::key;
         }
       }
+      if (GetAsyncKeyState((unsigned short)'C')) // changes the current shape to the next one, and vice versa
+      { 
+        if (values[1] <= 0) {
+          shape.remove(std::ref(board));
+          shapeshadow.remove(std::ref(board));
+          swap_next_random_shape = shape.shape_i;
+          shapeshadow.swap(nextShape, next_random_shape);
+          shape.swap(nextShape, next_random_shape);
+          nextShape = Shapes::shapes[swap_next_random_shape];
+          next_random_shape = swap_next_random_shape;
+          values[1] = CD::key;
+        }
+      }
 
       // lower shape
       if (shape.getStatus()) {
@@ -538,7 +568,7 @@ int main() {
       if (shape.getStatus() == false) {
         shapeshadow.reset(nextShape, next_random_shape);
         shape.reset(nextShape, next_random_shape);
-        next_random_shape = rand() % 7;
+        next_random_shape = rand() % Shapes::shapequantity;
         nextShape = Shapes::shapes[next_random_shape];
         isFrozen = false;
       }
